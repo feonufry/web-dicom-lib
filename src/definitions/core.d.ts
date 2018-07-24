@@ -1,4 +1,3 @@
-import {DicomElement, LazyValue} from "WebDicom";
 
 declare module "WebDicom" {
 
@@ -23,8 +22,8 @@ declare module "WebDicom" {
     }
 
     interface RootDataSetPath {
-        toString(): string;
-        tag(tag: Tag): DicomElementPath;
+        readonly toString(): string;
+        readonly tag(tag: Tag): DicomElementPath;
     }
 
     interface RootDataSetPathConstructor {
@@ -32,11 +31,11 @@ declare module "WebDicom" {
     }
 
     interface SequenceItemPath {
-        sequence: DicomElementPath;
-        itemNumber: number;
-        toString(): string;
-        tag(tag: Tag): DicomElementPath;
-        next(): SequenceItemPath;
+        readonly sequence: DicomElementPath;
+        readonly itemNumber: number;
+        readonly toString(): string;
+        readonly tag(tag: Tag): DicomElementPath;
+        readonly next(): SequenceItemPath;
     }
 
     interface SequenceItemPathConstructor {
@@ -44,10 +43,10 @@ declare module "WebDicom" {
     }
 
     interface DicomElementPath {
-        dataSetPath: SequenceItemPath | RootDataSetPath;
-        tag: Tag;
-        toString(): string;
-        sequenceItem(itemNumber: number): SequenceItemPath;
+        readonly dataSetPath: SequenceItemPath | RootDataSetPath;
+        readonly tag: Tag;
+        readonly toString(): string;
+        readonly sequenceItem(itemNumber: number): SequenceItemPath;
     }
 
     interface DicomElementPathConstructor {
