@@ -23,7 +23,6 @@ declare module "WebDicom" {
     interface ItemBeginToken {
         readonly type: "itemBegin";
         readonly path: SequenceItemPath;
-        readonly length: number | null;
     }
 
     interface ItemEndToken {

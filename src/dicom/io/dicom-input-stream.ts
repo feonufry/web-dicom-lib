@@ -1,11 +1,14 @@
 // tslint:disable:no-implicit-dependencies
 import {
+    AnyDicomElement,
     DicomStreamToken,
     DicomInputStream as DicomInputStreamInterface,
     DicomPath,
     SequenceItemPath,
     DicomElementPath,
-    FilePreambleToken, DicomPrefixToken,
+    FilePreambleToken, DicomPrefixToken, DicomElement,
+    SequenceEndToken,
+    ItemEndToken,
 } from "WebDicom";
 // tslint:enable:no-implicit-dependencies
 
@@ -28,6 +31,79 @@ const FILE_META_INFO_PREFIX_LENGTH = FILE_META_INFO_PREAMBLE_LENGTH + FILE_META_
 
 interface FileMetadataInfo {
     transferSyntax: string;
+}
+
+interface ExpectedEnd {
+    type: "sequence" | "item";
+    position: number;
+}
+
+// tslint:disable:max-classes-per-file
+
+class ReadingState {
+    public readonly reader: TransferSyntaxReader;
+    public dataSetPath!: DicomPath;
+    public readonly ends: ExpectedEnd[] = [];
+
+    public constructor(input: InputStream, fileMetaInfo: FileMetadataInfo) {
+        this.reader = createTransferSyntaxReader(input, fileMetaInfo.transferSyntax);
+        this.setDataSetPath(new RootDataSetPath());
+    }
+
+    public startSequence(element: DicomElement<"SQ", undefined>, position: number): DicomElementPath {
+        this.setDataSetPath(element.path.sequenceItem(0));
+        if (element.valueLength !== UNDEFINED_LENGTH_32) {
+            this.ends.push({ type: "sequence", position: position + element.valueLength });
+        }
+        return element.path;
+    }
+
+    public startSequenceItem(element: AnyDicomElement, position: number): SequenceItemPath {
+        const itemPath: SequenceItemPath = (this.dataSetPath as SequenceItemPath).next();
+        const length = element.valueLength === UNDEFINED_LENGTH_32 ? null : element.valueLength;
+        this.setDataSetPath(itemPath);
+        if (length != null) {
+            this.ends.push({ type: "item", position: position + length });
+        }
+        return itemPath;
+    }
+
+    public endSequenceItem(position: number): SequenceItemPath {
+        if (this.isEnded("item", position)) {
+            this.ends.pop();
+        }
+        return this.dataSetPath as SequenceItemPath;
+    }
+
+    public endSequence(position: number): DicomElementPath {
+        if (this.isEnded("sequence", position)) {
+            this.ends.pop();
+        }
+        const sequencePath: DicomElementPath = (this.dataSetPath as SequenceItemPath).sequence;
+        this.setDataSetPath(sequencePath.dataSetPath);
+        return sequencePath;
+    }
+
+    public isSequenceItemEnded(position: number): boolean {
+        return this.isEnded("item", position);
+    }
+
+    public isSequenceEnded(position: number): boolean {
+        return this.isEnded("sequence", position);
+    }
+
+    private isEnded(type: "item" | "sequence", position: number): boolean {
+        if (this.ends.length === 0) {
+            return false;
+        }
+        const top = this.ends[this.ends.length - 1];
+        return top.type === type && top.position < position;
+    }
+
+    private setDataSetPath(dataSetPath: RootDataSetPath | SequenceItemPath): void {
+        this.dataSetPath = dataSetPath;
+        this.reader.rebase(dataSetPath);
+    }
 }
 
 export class DicomInputStream implements DicomInputStreamInterface {
@@ -55,36 +131,37 @@ export class DicomInputStream implements DicomInputStreamInterface {
         }
 
         yield * this.readFileMetadataInfoAsync();
+        yield * this.readDicomDataSet();
+    }
 
-        const reader = createTransferSyntaxReader(this.input, this.fileMetaInfo.transferSyntax);
-        let dataSetPath: DicomPath = new RootDataSetPath();
-        reader.rebase(dataSetPath);
-        for await (const element of reader.readAsync()) {
+    private async * readDicomDataSet(): AsyncIterableIterator<DicomStreamToken> {
+        const readingState = new ReadingState(this.input, this.fileMetaInfo);
+        for await (const element of readingState.reader.readAsync()) {
+            const position = this.input.getPosition();
+
+            yield* enumerateLengthBasedEnds(readingState, position);
+
+            // TODO: Filter out helper elements (Item, ItemDelimitationItem, SequenceDelimitationItem).
             yield { element, type: "element" };
+
             if (element.vr === "SQ") {
-                yield { type: "sequenceBegin", path: element.path };
-                dataSetPath = element.path.sequenceItem(0);
-                reader.rebase(dataSetPath);
+                const path = readingState.startSequence(element, position);
+                yield { path, type: "sequenceBegin" };
                 continue;
             }
             if (Tags.Item.tag.sameAs(element.tag)) {
-                const itemPath: SequenceItemPath = (dataSetPath as SequenceItemPath).next();
-                const length = element.valueLength === UNDEFINED_LENGTH_32 ? null : element.valueLength;
-                yield { length, path: itemPath, type: "itemBegin" };
-                dataSetPath = itemPath;
-                reader.rebase(dataSetPath);
+                const path = readingState.startSequenceItem(element, position);
+                yield { path, type: "itemBegin" };
                 continue;
             }
             if (Tags.ItemDelimitationItem.tag.sameAs(element.tag)) {
-                yield { path: dataSetPath as SequenceItemPath, type: "itemEnd" };
+                const path = readingState.endSequenceItem(position);
+                yield { path, type: "itemEnd" };
                 continue;
             }
             if (Tags.SequenceDelimitationItem.tag.sameAs(element.tag)) {
-                const sequencePath: DicomElementPath = (dataSetPath as SequenceItemPath).sequence;
-                yield { path: sequencePath, type: "sequenceEnd" };
-                dataSetPath = sequencePath.dataSetPath;
-                reader.rebase(dataSetPath);
-                continue;
+                const path = readingState.endSequence(position);
+                yield { path, type: "sequenceEnd" };
             }
         }
     }
@@ -151,4 +228,21 @@ function dicomPrefix(): DicomPrefixToken {
     return {
         type: "dicom_prefix",
     };
+}
+
+function* enumerateLengthBasedEnds(state: ReadingState, position: number):
+        IterableIterator<ItemEndToken | SequenceEndToken> {
+    while (true) {
+        if (state.isSequenceItemEnded(position)) {
+            const path = state.endSequenceItem(position);
+            yield { path, type: "itemEnd" };
+            continue;
+        }
+        if (state.isSequenceEnded(position)) {
+            const path = state.endSequence(position);
+            yield { path, type: "sequenceEnd" };
+            continue;
+        }
+        return;
+    }
 }
