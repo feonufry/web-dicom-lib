@@ -32,7 +32,6 @@ export function dicomElement(
         // Domain
         case "AE":
             return createDicomElement(path, tag, vr, valueLength, readMultiValueStringFromBuffer(buffer));
-        // TODO: AT
         case "CS":
             return createDicomElement(path, tag, vr, valueLength, readMultiValueStringFromBuffer(buffer));
         case "AS":
