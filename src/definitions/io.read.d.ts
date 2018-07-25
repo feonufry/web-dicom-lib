@@ -43,12 +43,16 @@ declare module "WebDicom" {
         | ItemEndToken
         | SequenceEndToken;
 
+    interface DicomInputStreamConfig {
+        emitItemElements: boolean;
+    }
+
     interface DicomInputStream {
-        readonly readAsync(): AsyncIterableIterator<DicomStreamToken>;
+        readonly readAsync(config?: DicomInputStreamConfig): AsyncIterableIterator<DicomStreamToken>;
     }
 
     interface DicomInputStreamFactory {
-        readonly fromBlob(blob: Blob): DicomInputStream;
+        readonly fromBlob(blob: Blob, config?: DicomInputStreamConfig): DicomInputStream;
     }
 
 }

@@ -3,6 +3,7 @@ import {
     AnyDicomElement,
     DicomStreamToken,
     DicomInputStream as DicomInputStreamInterface,
+    DicomInputStreamConfig,
     DicomPath,
     SequenceItemPath,
     DicomElementPath,
@@ -109,11 +110,17 @@ class ReadingState {
 export class DicomInputStream implements DicomInputStreamInterface {
 
     private readonly fileMetaInfo: FileMetadataInfo;
+    private readonly config: DicomInputStreamConfig;
 
-    public constructor(private readonly input: InputStream) {
+    public constructor(
+            private readonly input: InputStream,
+            config?: DicomInputStreamConfig) {
         assertNotNull(input, "input");
         this.fileMetaInfo = {
             transferSyntax: TransferSyntaxes.ImplicitVRLittleEndian,
+        };
+        this.config = config || {
+            emitItemElements: false,
         };
     }
 
@@ -141,8 +148,9 @@ export class DicomInputStream implements DicomInputStreamInterface {
 
             yield* enumerateLengthBasedEnds(readingState, position);
 
-            // TODO: Filter out helper elements (Item, ItemDelimitationItem, SequenceDelimitationItem).
-            yield { element, type: "element" };
+            if (this.config.emitItemElements || !isItemElement(element)) {
+                yield {element, type: "element"};
+            }
 
             if (element.vr === "SQ") {
                 const path = readingState.startSequence(element, position);
@@ -245,4 +253,10 @@ function* enumerateLengthBasedEnds(state: ReadingState, position: number):
         }
         return;
     }
+}
+
+function isItemElement(element: AnyDicomElement): boolean {
+    return Tags.Item.tag.sameAs(element.tag)
+        || Tags.ItemDelimitationItem.tag.sameAs(element.tag)
+        || Tags.SequenceDelimitationItem.tag.sameAs(element.tag);
 }
