@@ -45,6 +45,7 @@ declare module "WebDicom" {
 
     interface DicomInputStreamConfig {
         emitItemElements: boolean;
+        emitGroupLength: boolean;
     }
 
     interface DicomInputStream {
