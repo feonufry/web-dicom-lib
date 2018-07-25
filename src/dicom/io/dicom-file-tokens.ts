@@ -39,7 +39,7 @@ export function dicomElement(
         case "PN":
             return createDicomElement(path, tag, vr, valueLength, readMultiValueStringFromBuffer(buffer));
         case "UI":
-            return createDicomElement(path, tag, vr, valueLength, readMultiValueStringFromBuffer(buffer));
+            return createDicomElement(path, tag, vr, valueLength, readMultiValueStringFromBuffer(buffer, true));
         case "AT":
             return createDicomElement(path, tag, vr, valueLength, readTagFromBuffer(buffer, littleEndian));
 
@@ -123,8 +123,13 @@ export function lazyDicomElement(
     throw new Error(`VR ${vr} is not supported yet by Lazy Loading`);
 }
 
-function readMultiValueStringFromBuffer(buffer: ArrayBuffer): string[] {
-    const multiValueString = String.fromCharCode.apply(null, new Uint8Array(buffer)) as string;
+function readMultiValueStringFromBuffer(buffer: ArrayBuffer, trimRight: boolean = false): string[] {
+    let multiValueString = String.fromCharCode.apply(null, new Uint8Array(buffer)) as string;
+    if (trimRight) {
+        multiValueString = multiValueString
+            .trimRight()
+            .replace("\0", "");
+    }
     return multiValueString.split("\\");
 }
 
