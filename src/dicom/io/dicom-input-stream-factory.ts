@@ -11,7 +11,7 @@ import {BlobInputStream} from "../../blobs/blob-input-stream";
 import {assertNotNull, assertType} from "../../helpers/assertions";
 
 export class DicomInputStreamFactory implements DicomInputStreamFactoryInterface {
-    public fromBlob(blob: Blob, config?: DicomInputStreamConfig): DicomInputStreamInterface {
+    public fromBlob(blob: Blob, config?: Partial<DicomInputStreamConfig>): DicomInputStreamInterface {
         assertNotNull(blob, "blob");
         assertType(blob, "object", "blob");
 

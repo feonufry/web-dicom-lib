@@ -46,14 +46,15 @@ declare module "WebDicom" {
     interface DicomInputStreamConfig {
         emitItemElements: boolean;
         emitGroupLength: boolean;
+        lazyLoadThreshold: number;
     }
 
     interface DicomInputStream {
-        readonly readAsync(config?: DicomInputStreamConfig): AsyncIterableIterator<DicomStreamToken>;
+        readonly readAsync(config?: Partial<DicomInputStreamConfig>): AsyncIterableIterator<DicomStreamToken>;
     }
 
     interface DicomInputStreamFactory {
-        readonly fromBlob(blob: Blob, config?: DicomInputStreamConfig): DicomInputStream;
+        readonly fromBlob(blob: Blob, config?: Partial<DicomInputStreamConfig>): DicomInputStream;
     }
 
 }

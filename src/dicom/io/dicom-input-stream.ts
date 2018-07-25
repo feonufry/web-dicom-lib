@@ -42,13 +42,15 @@ interface ExpectedEnd {
 
 // tslint:disable:max-classes-per-file
 
+const ONE_MEGABYTE = 1048576;
+
 class ReadingState {
     public readonly reader: TransferSyntaxReader;
     public dataSetPath!: DicomPath;
     public readonly ends: ExpectedEnd[] = [];
 
-    public constructor(input: InputStream, fileMetaInfo: FileMetadataInfo) {
-        this.reader = createTransferSyntaxReader(input, fileMetaInfo.transferSyntax);
+    public constructor(input: InputStream, fileMetaInfo: FileMetadataInfo, lazyLoadThreshold: number) {
+        this.reader = createTransferSyntaxReader(input, fileMetaInfo.transferSyntax, lazyLoadThreshold);
         this.setDataSetPath(new RootDataSetPath());
     }
 
@@ -115,15 +117,12 @@ export class DicomInputStream implements DicomInputStreamInterface {
 
     public constructor(
             private readonly input: InputStream,
-            config?: DicomInputStreamConfig) {
+            config?: Partial<DicomInputStreamConfig>) {
         assertNotNull(input, "input");
         this.fileMetaInfo = {
             transferSyntax: TransferSyntaxes.ImplicitVRLittleEndian,
         };
-        this.config = config || {
-            emitItemElements: false,
-            emitGroupLength: false,
-        };
+        this.config = getConfig(config);
     }
 
     public async * readAsync(): AsyncIterableIterator<DicomStreamToken> {
@@ -144,7 +143,7 @@ export class DicomInputStream implements DicomInputStreamInterface {
     }
 
     private async * readDicomDataSet(): AsyncIterableIterator<DicomStreamToken> {
-        const readingState = new ReadingState(this.input, this.fileMetaInfo);
+        const readingState = new ReadingState(this.input, this.fileMetaInfo, this.config.lazyLoadThreshold);
         for await (const element of readingState.reader.readAsync()) {
             const position = this.input.getPosition();
 
@@ -178,7 +177,8 @@ export class DicomInputStream implements DicomInputStreamInterface {
 
     private async * readFileMetadataInfoAsync(): AsyncIterableIterator<DicomStreamToken> {
         let metaInfoSize = -1;
-        const reader = createTransferSyntaxReader(this.input, TransferSyntaxes.ExplicitVRLittleEndian);
+        const reader = createTransferSyntaxReader(
+            this.input, TransferSyntaxes.ExplicitVRLittleEndian, this.config.lazyLoadThreshold);
         for await (const element of reader.readAsync()) {
             yield {element, type: "element"};
             if (Tags.FileMetaInformationGroupLength.matches(element)) {
@@ -226,14 +226,17 @@ function dicomParserError(position: number, failureCode: string, failureMessage:
         `(@ ${position}) ${message}`);
 }
 
-function createTransferSyntaxReader(stream: InputStream, transferSyntax: string): TransferSyntaxReader {
+function createTransferSyntaxReader(
+        stream: InputStream,
+        transferSyntax: string,
+        lazyLoadThreshold: number): TransferSyntaxReader {
     switch (transferSyntax) {
         case TransferSyntaxes.ImplicitVRLittleEndian:
-            return new ImplicitVrReader(stream, 1048576);
+            return new ImplicitVrReader(stream, lazyLoadThreshold);
         case TransferSyntaxes.ExplicitVRBigEndian:
-            return new ExplicitVrReader(false, stream, 1048576);
+            return new ExplicitVrReader(false, stream, lazyLoadThreshold);
         default:
-            return new ExplicitVrReader(true, stream, 1048576);
+            return new ExplicitVrReader(true, stream, lazyLoadThreshold);
     }
 }
 
@@ -265,4 +268,20 @@ function* enumerateLengthBasedEnds(state: ReadingState, position: number):
         }
         return;
     }
+}
+
+function getConfig(config?: Partial<DicomInputStreamConfig>): DicomInputStreamConfig {
+    const defaults = {
+        emitItemElements: false,
+        emitGroupLength: false,
+        lazyLoadThreshold: ONE_MEGABYTE,
+    };
+    if (config == null) {
+        return defaults;
+    }
+    return {
+        emitItemElements: config.emitItemElements != null ? config.emitItemElements : defaults.emitItemElements,
+        emitGroupLength: config.emitGroupLength != null ? config.emitGroupLength : defaults.emitGroupLength,
+        lazyLoadThreshold: config.lazyLoadThreshold != null ? config.lazyLoadThreshold : defaults.lazyLoadThreshold,
+    };
 }
