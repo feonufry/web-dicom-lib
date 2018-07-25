@@ -8,9 +8,9 @@ import {assertNotNull, assertRange, assertType} from "../../../helpers/assertion
 import {dicomElement, lazyDicomElement} from "../dicom-file-tokens";
 import {WebDicomError} from "../../../web-dicom-error";
 import {Tag} from "../../core/tag";
-import {Tags} from "../../dictionary/tags";
 import {RootDataSetPath, SequenceItemPath} from "../../core/path";
 import {UNDEFINED_LENGTH_32} from "../../core/element";
+import {hasValue, isItemSupport, isUnlimited} from "../../core/elements";
 
 const TAG_GROUP_OFFSET = 0;
 const TAG_ELEMENT_OFFSET = 2;
@@ -169,19 +169,4 @@ function readVr(view: DataView): VR {
     return String.fromCharCode(
         view.getUint8(VR_OFFSET),
         view.getUint8(VR_OFFSET + 1)) as VR;
-}
-
-export function isUnlimited(vr: VR): boolean {
-    return vr === "OB" || vr === "OD" || vr === "OF" || vr === "OL" || vr === "OW"
-        || vr === "UC" || vr === "UT" || vr === "UR" || vr === "SQ" || vr === "UN";
-}
-
-export function hasValue(vr: VR): boolean {
-    return vr !== "SQ" && vr != null;
-}
-
-export function isItemSupport(tag: Tag): boolean {
-    return Tags.Item.tag.sameAs(tag)
-        || Tags.ItemDelimitationItem.tag.sameAs(tag)
-        || Tags.SequenceDelimitationItem.tag.sameAs(tag);
 }

@@ -27,6 +27,7 @@ import {TransferSyntaxReader} from "./transferSyntax/transfer-syntax-reader";
 import {ImplicitVrReader} from "./transferSyntax/implicit-vr-reader";
 import {RootDataSetPath} from "../core/path";
 import {UNDEFINED_LENGTH_32} from "../core/element";
+import {isItemSupport} from "../core/elements";
 
 const FILE_META_INFO_PREFIX_LENGTH = FILE_META_INFO_PREAMBLE_LENGTH + FILE_META_INFO_SIGNATURE_LENGTH;
 
@@ -148,7 +149,7 @@ export class DicomInputStream implements DicomInputStreamInterface {
 
             yield* enumerateLengthBasedEnds(readingState, position);
 
-            if (this.config.emitItemElements || !isItemElement(element)) {
+            if (this.config.emitItemElements || !isItemSupport(element.tag)) {
                 yield {element, type: "element"};
             }
 
@@ -253,10 +254,4 @@ function* enumerateLengthBasedEnds(state: ReadingState, position: number):
         }
         return;
     }
-}
-
-function isItemElement(element: AnyDicomElement): boolean {
-    return Tags.Item.tag.sameAs(element.tag)
-        || Tags.ItemDelimitationItem.tag.sameAs(element.tag)
-        || Tags.SequenceDelimitationItem.tag.sameAs(element.tag);
 }
