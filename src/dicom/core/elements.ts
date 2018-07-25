@@ -21,9 +21,16 @@ export function hasValue(vr: VR): boolean {
 }
 
 export function isGroupLength(tag: Tag): boolean {
+    assertNotNull(tag, "tag");
     return tag.element === 0;
 }
 
+export function isPrivate(tag: Tag): boolean {
+    assertNotNull(tag, "tag");
+    return tag.group % 2 === 1;
+}
+
 export function isPrivateCreator(tag: Tag): boolean {
-    return tag.element >= 0 && tag.element <= 0xFF;
+    assertNotNull(tag, "tag");
+    return isPrivate(tag) && tag.element >= 0 && tag.element <= 0xFF;
 }
