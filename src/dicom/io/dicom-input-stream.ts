@@ -55,7 +55,7 @@ class ReadingState {
     }
 
     public startSequence(element: DicomElement<"SQ", undefined>, position: number): DicomElementPath {
-        this.setDataSetPath(element.path.sequenceItem(0));
+        this.setDataSetPath(element.path.sequenceItem(-1));
         if (element.valueLength !== UNDEFINED_LENGTH_32) {
             this.ends.push({ type: "sequence", position: position + element.valueLength });
         }

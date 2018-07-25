@@ -30,7 +30,7 @@ export class SequenceItemPath implements SequenceItemPathInterface {
         assertNotNull(sequence, "sequence");
         assertNotNull(itemNumber, "itemNumber");
         assertType(itemNumber, "number", "itemNumber");
-        assertRange(itemNumber, 0, Number.POSITIVE_INFINITY, "itemNumber");
+        assertRange(itemNumber, -1, Number.POSITIVE_INFINITY, "itemNumber");
 
         this.fullPath = `${sequence.toString()}.#${itemNumber}`;
     }
