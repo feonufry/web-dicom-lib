@@ -133,12 +133,13 @@ export class DicomInputStream implements DicomInputStreamInterface {
         if (isValidDicomFilePrefix(prefix)) {
             yield preamble(prefix);
             yield dicomPrefix();
+            yield * this.readFileMetadataInfoAsync();
         } else {
             // TODO: Try to guess
-            throw dicomParserError(0, "invalid_prefix", "File preamble and/or DICOM prefix are invalid");
+            // TODO: throw dicomParserError(0, "invalid_prefix", "File preamble and/or DICOM prefix are invalid");
+            this.input.seek(0);
         }
 
-        yield * this.readFileMetadataInfoAsync();
         yield * this.readDicomDataSet();
     }
 
