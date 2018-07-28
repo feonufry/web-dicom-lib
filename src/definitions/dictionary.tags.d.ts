@@ -12,6 +12,7 @@ declare module "WebDicom" {
     }
 
     interface TagsDictionary {
+        // Group 0x0002
         readonly FileMetaInformationGroupLength: TagDescriptor<"UL", number[]>;
         readonly FileMetaInformationVersion: TagDescriptor<"OB", Uint8Array>;
         readonly MediaStorageSOPClassUID: TagDescriptor<"UI", string[]>;
@@ -24,10 +25,19 @@ declare module "WebDicom" {
         readonly ReceivingApplicationEntityTitle: TagDescriptor<"AE", string[]>;
         readonly PrivateInformationCreatorUID: TagDescriptor<"UI", string[]>;
         readonly PrivateInformation: TagDescriptor<"OB", Uint8Array>;
+        // Group 0x0008
+        readonly LengthToEnd: TagDescriptor<"UL", number[]>;
         readonly SpecificCharacterSet: TagDescriptor<"CS", string[]>;
+        readonly LanguageCodeSequence: TagDescriptor<"SQ", undefined>;
         readonly ImageType: TagDescriptor<"CS", string[]>;
+        readonly RecognitionCode: TagDescriptor<"SH", string[]>;
+        readonly InstanceCreationDate: TagDescriptor<"DA", string[]>;
+        readonly InstanceCreationTime: TagDescriptor<"TM", string[]>;
+        readonly InstanceCoercionDateTime: TagDescriptor<"DT", string[]>;
         readonly SOPClassUID: TagDescriptor<"UI", string[]>;
         readonly SOPInstanceUID: TagDescriptor<"UI", string[]>;
+        readonly RelatedGeneralSOPClassUID: TagDescriptor<"UI", string[]>;
+        readonly OriginalSpecializedSOPClassUID: TagDescriptor<"UI", string[]>;
         readonly StudyDate: TagDescriptor<"DA", string[]>;
         readonly SeriesDate: TagDescriptor<"DA", string[]>;
         readonly AcquisitionDate: TagDescriptor<"DA", string[]>;
@@ -39,6 +49,7 @@ declare module "WebDicom" {
         readonly Manufacturer: TagDescriptor<"LO", string[]>;
         readonly StudyDescription: TagDescriptor<"LO", string[]>;
         readonly SeriesDescription: TagDescriptor<"LO", string[]>;
+        // Group 0xFFFE
         readonly Item: TagDescriptor<undefined, undefined>;
         readonly ItemDelimitationItem: TagDescriptor<undefined, undefined>;
         readonly SequenceDelimitationItem: TagDescriptor<undefined, undefined>;

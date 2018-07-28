@@ -35,6 +35,9 @@ interface TagsDictionaryIndexable extends TagsDictionary {
 }
 export const Tags: TagsDictionaryIndexable = {
     find,
+
+    // Group 0x0002
+
     FileMetaInformationGroupLength: new TagDescriptor<"UL", number[]>(
         new Tag(0x0002, 0x0000),
         "UL", "File Meta Information Group Length",
@@ -83,34 +86,41 @@ export const Tags: TagsDictionaryIndexable = {
         new Tag(0x0002, 0x0102),
         "OB", "Private Information",
     ),
+
+    // Group 0x0008
+
+    LengthToEnd: new TagDescriptor<"UL", number[]>(
+        new Tag(0x0008, 0x0001), "UL", "Length to End"),
     SpecificCharacterSet: new TagDescriptor<"CS", string[]>(
-        new Tag(0x0008, 0x0005),
-        "CS", "Specific Character Set",
-    ),
+        new Tag(0x0008, 0x0005), "CS", "Specific Character Set"),
+    LanguageCodeSequence: new TagDescriptor<"SQ", undefined>(
+        new Tag(0x0008, 0x0006), "SQ", "Language Code Sequence"),
     ImageType: new TagDescriptor<"CS", string[]>(
-        new Tag(0x0008, 0x0008),
-        "CS", "Image Type",
-    ),
+        new Tag(0x0008, 0x0008), "CS", "Image Type"),
+    RecognitionCode: new TagDescriptor<"SH", string[]>(
+        new Tag(0x0008, 0x0010), "SH", "Recognition Code"),
+    InstanceCreationDate: new TagDescriptor<"DA", string[]>(
+        new Tag(0x0008, 0x0012), "DA", "Instance Creation Date"),
+    InstanceCreationTime: new TagDescriptor<"TM", string[]>(
+        new Tag(0x0008, 0x0013), "TM", "Instance Creation Time"),
+    InstanceCreatorUID: new TagDescriptor<"UI", string[]>(
+        new Tag(0x0008, 0x0014), "UI", "Instance Creator UID"),
+    InstanceCoercionDateTime: new TagDescriptor<"DT", string[]>(
+        new Tag(0x0008, 0x0015), "DT", "Instance Coercion Date Time"),
     SOPClassUID: new TagDescriptor<"UI", string[]>(
-        new Tag(0x0008, 0x0016),
-        "UI", "SOP Class UID",
-    ),
+        new Tag(0x0008, 0x0016), "UI", "SOP Class UID"),
     SOPInstanceUID: new TagDescriptor<"UI", string[]>(
-        new Tag(0x0008, 0x0018),
-        "UI", "SOP Instance UID",
-    ),
+        new Tag(0x0008, 0x0018), "UI", "SOP Instance UID"),
+    RelatedGeneralSOPClassUID: new TagDescriptor<"UI", string[]>(
+        new Tag(0x0008, 0x001A), "UI", "Related General SOP Class UID"),
+    OriginalSpecializedSOPClassUID: new TagDescriptor<"UI", string[]>(
+        new Tag(0x0008, 0x001B), "UI", "Original Specialized SOP Class UID"),
     StudyDate: new TagDescriptor<"DA", string[]>(
-        new Tag(0x0008, 0x0020),
-        "DA", "Study Date",
-    ),
+        new Tag(0x0008, 0x0020), "DA", "Study Date"),
     SeriesDate: new TagDescriptor<"DA", string[]>(
-        new Tag(0x0008, 0x0021),
-        "DA", "Series Date",
-    ),
+        new Tag(0x0008, 0x0021), "DA", "Series Date"),
     AcquisitionDate: new TagDescriptor<"DA", string[]>(
-        new Tag(0x0008, 0x0022),
-        "DA", "Acquisition Date",
-    ),
+        new Tag(0x0008, 0x0022), "DA", "Acquisition Date"),
     StudyTime: new TagDescriptor<"TM", string[]>(
         new Tag(0x0008, 0x0030),
         "TM", "Study Time",
@@ -143,6 +153,9 @@ export const Tags: TagsDictionaryIndexable = {
         new Tag(0x0008, 0x103E),
         "LO", "Series Description",
     ),
+
+    // Group 0xFFFE
+
     Item: new TagDescriptor<undefined, undefined>(
         new Tag(0xFFFE, 0xE000),
         undefined, "Item",
